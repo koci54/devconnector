@@ -8,6 +8,7 @@ const passport = require('passport');
 
 // Load Input Validation
 const validateRegisterInput = require('../../validation/register');
+const validateLoginInput = require('../../validation/login');
 
 // load user model
 const User = require('../../models/User');
@@ -22,6 +23,7 @@ router.get('/test', (req, res) => res.json({ msg: 'users works' }));
 // @access public
 router.post('/register', (req, res) => {
   const { errors, isValid } = validateRegisterInput(req.body);
+// check validation
   if (!isValid) {
     return res.status(400).json(errors);
   }
@@ -67,9 +69,17 @@ router.post('/login', (req, res) => {
 
   // find user by email
   User.findOne({ email }).then(user => {
+
+    const { errors, isValid } = validateLoginInput(req.body);
+  // check validation
+    if (!isValid) {
+      return res.status(400).json(errors);
+    }
+
     // check for user
     if (!user) {
-      return res.status(404).json({ email: 'user not found' });
+      errors.email = 'User not found';
+      return res.status(404).json(errors);
     }
     // check password
     bcrypt.compare(password, user.password).then(isMatch => {
@@ -95,7 +105,8 @@ router.post('/login', (req, res) => {
           }
         );
       } else {
-        return res.status(400).json({ password: 'Pasword incorrect' });
+        errors.password = 'Password incorrect';
+        return res.status(400).json(errors);
       }
     });
   });
@@ -103,7 +114,7 @@ router.post('/login', (req, res) => {
 
 // @route GET api/users/current
 // @desc return current user
-// @access privat
+// @access private
 
 router.get(
   '/current',
